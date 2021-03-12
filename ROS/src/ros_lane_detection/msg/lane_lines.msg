@@ -1,2 +1,2 @@
-float64 left
-float64 right
+float64[2] left_lane
+float64[2] right_lane
