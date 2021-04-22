@@ -1,7 +1,6 @@
 #include <iostream>
 #include <unistd.h>
 #include "Grid.cpp"
-#include "UtilityClasses.cpp"
 using namespace std;
 class KantaBot
 {
@@ -15,12 +14,17 @@ public:
     void setBotLocation(int x,int y);
     // void setBotLocation(Point loc);
     Point getBotLocation();
-    void sweepGrid(char d,int y1,int y2,int x1,int x2,int v);
+    void sweepGrid(char d);
     // void loadGrid();
+    pair<char,Point> getSweepDirection(pair<Point,Point>,array<Point,4>);
+    Cell& getCurrentCell();
+    void run();
     void moveVertical(int d);
     void moveHorizontal(int d);
-    pair<Point,Point> sweepEndVertex(Cell);
-    Cell* nextCell(Cell c);
+    pair<Point,Point> sweepEndVertex();
+    Cell* nextCell();
+    void moveToCell(Cell c,Point v);
+    void markCellAsSwept(Cell c);
     ~KantaBot();
 };
 
@@ -28,13 +32,8 @@ KantaBot::KantaBot(Grid g,Point loc)
 {
     this->g = g;
     this->loc = loc;
-    this->g.grid[loc.y][loc.x] = 1;
+    // this->g.grid[loc.y][loc.x] = 1;
 }
-// KantaBot::KantaBot(int x,int y)
-// {
-//     loc.x = x;
-//     loc.y = y;
-// }
 void KantaBot::setBotLocation(int x,int y)
 {
     loc = Point(x,y);
@@ -44,89 +43,126 @@ Point KantaBot::getBotLocation()
 {
     return loc;
 }
-void KantaBot::sweepGrid(char d,int y1,int y2,int x1,int x2,int v) {
+void KantaBot::sweepGrid(char d) {
     int dir_row,dir_col;
-    switch (v)
+    Cell c = getCurrentCell();
+    int v;
+    if(loc.x==c.x1 && loc.y == c.y1)
     {
-    case 1:
-        setBotLocation(x1,y1);//should check instead of set
+        v=0;
         dir_row=1;
         dir_col=1;
-        break;
-    case 2:
-        setBotLocation(x2,y1);
+    }
+    else if (loc.x==c.x2 && loc.y == c.y1)
+    {
+        v=1;
         dir_row = 1;
         dir_col = -1;
-        break;
-    case 3:
-        setBotLocation(x1,y2);
+    }
+    else if (loc.x == c.x1 && loc.y == c.y2)
+    {
+        v=2;
         dir_row = -1;
         dir_col = 1;
-        break;
-    case 4:
-        setBotLocation(x2,y2);
+    }
+    else if (loc.x == c.x2 && loc.y == c.y2)
+    {
+        v=3;
         dir_row = -1;
         dir_col = -1;
-        break;
-    default:
-        cout<<"Wrong Vertex Option";
-        break;
     }
-    
-    
-    
+    else
+        cout<<"BOT NOT at Vertex";
+    // switch (v)
+    // {
+    // case 1:
+    //     // setBotLocation(x1,y1);//should check instead of set
+    //     dir_row=1;
+    //     dir_col=1;
+    //     break;
+    // case 2:
+    //     // setBotLocation(x2,y1);
+    //     dir_row = 1;
+    //     dir_col = -1;
+    //     break;
+    // case 3:
+    //     // setBotLocation(x1,y2);
+    //     dir_row = -1;
+    //     dir_col = 1;
+    //     break;
+    // case 4:
+    //     // setBotLocation(x2,y2);
+    //     dir_row = -1;
+    //     dir_col = -1;
+    //     break;
+    // default:
+    //     cout<<"Wrong Vertex Option";
+    //     break;
+    // }
     if(d=='H')
     {
-        cout<<loc.y<<" "<<loc.x<<endl;
-        for (; loc.y>=y1 && loc.y <=y2; loc.y+=dir_row)
+        // cout<<loc.y<<" "<<loc.x<<endl;
+        for (; (v>=3 && loc.y>c.y1) || (v<=2 && loc.y <c.y2); moveVertical(dir_row))
         {
-            for (; loc.x>=x1 && loc.x<=x2; loc.x+=dir_col)
-            {
-                g.grid[loc.y][loc.x]++;
-                usleep(0.25*microsecond);
-                g.display();
-            }
+            moveHorizontal(dir_col*(c.b-1));
+            // for (; loc.x>=x1 && loc.x<=x2; loc.x+=dir_col)
+            // {
+            //     g.grid[loc.y][loc.x]++;
+            //     usleep(0.25*microsecond);
+            //     g.display();
+            // }
             dir_col*=-1;
-            loc.x+=dir_col;
+            // loc.x+=dir_col;
         }
+        moveHorizontal(dir_col*(c.b-1));
     }
     else if (d=='V')
     {
-        for (; loc.x>=x1 && loc.x<=x2;loc.x+=dir_col)
+        for (; (v%2==1 && loc.x>c.x1) || (v%2==0 && loc.x<c.x2);moveHorizontal(dir_col))
         {
-            for (; loc.y>=y1 && loc.y <=y2; loc.y+=dir_row)
-            {
-                g.grid[loc.y][loc.x]++;
-                usleep(0.25*microsecond);
-                g.display();
-            }
+            moveVertical(dir_row*(c.l-1));
+            // for (; loc.y>=y1 && loc.y <=y2; loc.y+=dir_row)
+            // {
+            //     g.grid[loc.y][loc.x]++;
+            //     usleep(0.25*microsecond);
+            //     g.display();
+            // }
             dir_row*=-1;
-            loc.y+=dir_row;
         }
-        
+        moveVertical(dir_row*(c.l-1));
     }
-    
+    markCellAsSwept(c);
 }
 void KantaBot::moveVertical(int d) {
-    loc.y+=d;
-    g.grid[loc.y][loc.x]++;
-    usleep(0.25*microsecond);
+    int dir = (d>0)? 1:-1;
+    for(int i=1;i<=abs(d);i++)
+    {
+        usleep(0.5*microsecond);
+        loc.y+=dir;
+        g.grid[loc.y][loc.x]++;
+        g.display();
+    }
 }
 void KantaBot::moveHorizontal(int d) {
-    loc.x+=d;
-    g.grid[loc.y][loc.x]++;
-    usleep(0.25*microsecond);
+    int dir = (d>0)? 1:-1;
+    for(int i=1;i<=abs(d);i++)
+    {
+        usleep(0.5*microsecond);
+        loc.x+=dir;
+        g.grid[loc.y][loc.x]++;
+        g.display();
+    }
 }
 KantaBot::~KantaBot()
 {
 }
 
-pair<Point,Point> Kanta::sweepEndVertex(Cell c, int v)//Horizontal,Vertical,Also replace with bot location
+pair<Point,Point> KantaBot::sweepEndVertex()//Horizontal,Vertical,Also replace with bot location
 {
     Point ph,pv;
-    switch (v)
+    Cell c = getCurrentCell();
+    if(loc.x==c.x1 && loc.y == c.y1)
     {
-    case 1:
         if (c.l%2==0)
         {
             ph.x = c.x1;
@@ -148,101 +184,285 @@ pair<Point,Point> Kanta::sweepEndVertex(Cell c, int v)//Horizontal,Vertical,Also
             pv.x = c.x2;
             pv.y = c.y2;
         }
-        break;
+    }
+    else if (loc.x==c.x2 && loc.y == c.y1)
+    {
+        if (c.l%2==0)
+        {
+            ph.x = c.x2;
+            ph.y = c.y2;
+        }
+        else
+        {
+            ph.x = c.x1;
+            ph.y = c.y2;
+        }
+        
+        if (c.b%2==0)
+        {
+            pv.x = c.x1;
+            pv.y = c.y1;
+        }
+        else
+        {
+            pv.x = c.x1;
+            pv.y = c.y2;
+        }
+    }
+    else if (loc.x == c.x1 && loc.y == c.y2)
+    {
+        if (c.l%2==0)
+        {
+            ph.x = c.x1;
+            ph.y = c.y1;
+        }
+        else
+        {
+            ph.x = c.x2;
+            ph.y = c.y1;
+        }
+        
+        if (c.b%2==0)
+        {
+            pv.x = c.x2;
+            pv.y = c.y2;
+        }
+        else
+        {
+            pv.x = c.x2;
+            pv.y = c.y1;
+        }
+    }
+    else if (loc.x == c.x2 && loc.y == c.y2)
+    {
+        if (c.l%2==0)
+        {
+            ph.x = c.x2;
+            ph.y = c.y1;
+        }
+        else
+        {
+            ph.x = c.x1;
+            ph.y = c.y1;
+        }
+        
+        if (c.b%2==0)
+        {
+            pv.x = c.x1;
+            pv.y = c.y2;
+        }
+        else
+        {
+            pv.x = c.x1;
+            pv.y = c.y1;
+        }
+    }
+    else
+        cout<<"BOT NOT at Vertex";
     
-    case 2:
-        if (c.l%2==0)
-        {
-            ph.x = c.x2;
-            ph.y = c.y2;
-        }
-        else
-        {
-            ph.x = c.x1;
-            ph.y = c.y2;
-        }
+    // switch (v)
+    // {
+    // case 1:
+    //     if (c.l%2==0)
+    //     {
+    //         ph.x = c.x1;
+    //         ph.y = c.y2;
+    //     }
+    //     else
+    //     {
+    //         ph.x = c.x2;
+    //         ph.y = c.y2;
+    //     }
         
-        if (c.b%2==0)
-        {
-            pv.x = c.x1;
-            pv.y = c.y1;
-        }
-        else
-        {
-            pv.x = c.x1;
-            pv.y = c.y2;
-        }
-
-        break;
+    //     if (c.b%2==0)
+    //     {
+    //         pv.x = c.x2;
+    //         pv.y = c.y1;
+    //     }
+    //     else
+    //     {
+    //         pv.x = c.x2;
+    //         pv.y = c.y2;
+    //     }
+    //     break;
     
-    case 3:
-        if (c.l%2==0)
-        {
-            ph.x = c.x1;
-            ph.y = c.y1;
-        }
-        else
-        {
-            ph.x = c.x2;
-            ph.y = c.y1;
-        }
+    // case 2:
+    //     if (c.l%2==0)
+    //     {
+    //         ph.x = c.x2;
+    //         ph.y = c.y2;
+    //     }
+    //     else
+    //     {
+    //         ph.x = c.x1;
+    //         ph.y = c.y2;
+    //     }
         
-        if (c.b%2==0)
-        {
-            pv.x = c.x2;
-            pv.y = c.y2;
-        }
-        else
-        {
-            pv.x = c.x2;
-            pv.y = c.y1;
-        }
+    //     if (c.b%2==0)
+    //     {
+    //         pv.x = c.x1;
+    //         pv.y = c.y1;
+    //     }
+    //     else
+    //     {
+    //         pv.x = c.x1;
+    //         pv.y = c.y2;
+    //     }
 
-        break;
+    //     break;
     
-    case 4:
-        if (c.l%2==0)
-        {
-            ph.x = c.x2;
-            ph.y = c.y1;
-        }
-        else
-        {
-            ph.x = c.x1;
-            ph.y = c.y1;
-        }
+    // case 3:
+    //     if (c.l%2==0)
+    //     {
+    //         ph.x = c.x1;
+    //         ph.y = c.y1;
+    //     }
+    //     else
+    //     {
+    //         ph.x = c.x2;
+    //         ph.y = c.y1;
+    //     }
         
-        if (c.b%2==0)
-        {
-            pv.x = c.x1;
-            pv.y = c.y2;
-        }
-        else
-        {
-            pv.x = c.x1;
-            pv.y = c.y1;
-        }
-        break;
+    //     if (c.b%2==0)
+    //     {
+    //         pv.x = c.x2;
+    //         pv.y = c.y2;
+    //     }
+    //     else
+    //     {
+    //         pv.x = c.x2;
+    //         pv.y = c.y1;
+    //     }
 
-    default:
-        break;
-    } 
+    //     break;
+    
+    // case 4:
+    //     if (c.l%2==0)
+    //     {
+    //         ph.x = c.x2;
+    //         ph.y = c.y1;
+    //     }
+    //     else
+    //     {
+    //         ph.x = c.x1;
+    //         ph.y = c.y1;
+    //     }
+        
+    //     if (c.b%2==0)
+    //     {
+    //         pv.x = c.x1;
+    //         pv.y = c.y2;
+    //     }
+    //     else
+    //     {
+    //         pv.x = c.x1;
+    //         pv.y = c.y1;
+    //     }
+    //     break;
+
+    // default:
+    //     break;
+    // } 
     return make_pair(ph,pv);
 }
-Cell* KantaBot::nextCell(Cell c)//Replace parameter cell with bot location
+
+Cell& KantaBot::getCurrentCell()//returns Copy!!!!!
 {
-    
+    for(vector<vector<Cell> >::iterator layer = g.layers.begin(); layer<g.layers.end();layer++)
+    {
+        for(vector<Cell>::iterator cell = layer->begin();cell<layer->end();cell++)
+        {
+            if(loc.x>=cell->x1 && loc.x<=cell->x2 && loc.y>=cell->y1 && loc.y<=cell->y2)
+                return *cell;
+        }
+    }
 }
 
+Cell* KantaBot::nextCell()//Replace parameter cell with bot location
+{
+    Cell curr_cell = getCurrentCell();
+    for(vector<vector<Cell> >::iterator l = g.layers.begin(); l<g.layers.end(); l++)
+    {
+        for(vector<Cell>::iterator c = l->begin();c<l->end();c++)
+        {
+                if(g.isConnected(curr_cell,*c) && c->swept==false && !(*c==curr_cell))
+                {
+                    return &*c;
+                }
+        }
+    }
+    return nullptr;
+}
+
+pair<char,Point> KantaBot::getSweepDirection(pair<Point,Point> p,array<Point,4> v)
+{
+    float hd=9999999,vd=9999999;
+    Point closest_vertexH,closest_vertexV;
+    for(int i=0; i<4; i++)
+    {
+        if(v[i].pointDistance(p.first)<hd)
+        {
+            hd = v[i].pointDistance(p.first);
+            // cout<<hd<<"-"<<"("<<v[i].x<<","<<v[i].y<<")"<<","<<"("<<p.first.x<<","<<p.first.y<<")"<<endl;
+            closest_vertexH = v[i];
+        }
+        if(v[i].pointDistance(p.second)<vd)
+        {
+            vd = v[i].pointDistance(p.second);
+            closest_vertexV = v[i];
+        }
+    }
+    if(hd<=vd)
+        return make_pair('H',closest_vertexH);
+    else
+        return make_pair('V',closest_vertexV);
+}
+
+void KantaBot::moveToCell(Cell c,Point v)
+{
+    Cell curr_cell = getCurrentCell();
+    int dir;
+    if(g.isConnected(c,curr_cell) && v.x>=curr_cell.x1 && v.x<=curr_cell.x2)
+    {
+        moveHorizontal(v.x-loc.x);
+        moveVertical(v.y-loc.y);
+    }
+}
+void KantaBot::markCellAsSwept(Cell c)
+{
+    for(vector<Cell>::iterator cell = g.layers[c.layer].begin();cell<g.layers[c.layer].end();cell++)
+    {
+        if(*cell==c)
+        {
+            cell->swept=true;
+            return;
+        }
+    }
+    cout<<"ERROR";
+}
+void KantaBot::run()
+{   g.createCells();
+    setBotLocation(0,0);
+
+    // Cell c = getCurrentCell();
+    // cout<<c.b;
+    Cell *nxt_cell;
+    while (nxt_cell = nextCell())
+    {
+        pair<char,Point> n = getSweepDirection(sweepEndVertex(),nxt_cell->getVertices());
+        // cout<<n.second.y;
+        sweepGrid(n.first);
+        moveToCell(*nxt_cell,n.second);
+    }
+    sweepGrid('H');
+    cout<<endl;
+}
 int main()
 {   Grid grid(10,10);
-    grid.addObstacle(0,3,1,2);
-    grid.addObstacle(3,6,4,8);
+    grid.addObstacle(0,4,2,4);
+    grid.addObstacle(2,6,6,8);
     KantaBot bot(grid,Point(0,0));
-    for(int a:grid.getHorizontalSlices()){
-        cout<<a;
-    }
+    bot.run();
     // bot.g.display();
-    cout<<endl;
     return 0;
 }

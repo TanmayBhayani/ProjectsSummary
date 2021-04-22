@@ -7,8 +7,9 @@ const unsigned int microsecond = 1000000;
 class Grid
 {
 private:
-    void mergeCells(vector<Cell>*,int);
+    void mergeCells();
 public:
+    vector<vector<Cell> > layers;
     int grid[20][20]={};
     int l,b;
     Grid();
@@ -17,7 +18,8 @@ public:
     void display();
     void addObstacle(int y1,int y2,int x1,int x2);
     vector<int> getHorizontalSlices();
-    vector<Cell>* createCells();
+    void createCells();
+    bool isConnected(Cell a,Cell b);
 };
 Grid::Grid() {
     l=0;
@@ -34,13 +36,17 @@ Grid::~Grid()
 }
 
 void Grid::display() {
+    system("clear");
+    cout<<"=============================================================="<<endl;
+    cout<<"=============================================================="<<endl;
+    cout<<"=============================================================="<<endl;
     for (int i = 0; i < l; i++)
     {
         for (int j = 0; j < b; j++)
             cout<<grid[i][j]<<"\t";
         cout<<endl<<endl;
     }
-    cout<<"=============================================================="<<endl;
+    
     // usleep(0.25*microsecond);
 }
 
@@ -77,42 +83,51 @@ vector<int> Grid::getHorizontalSlices()
     return s;
 }
 
-vector<Cell>* Grid::createCells() {
+void Grid::createCells() {
     vector<int> s = getHorizontalSlices();
-    int n = s.size()-1;
-    vector<Cell> layers[n];
+    int n = s.size();
     bool cellOpen = false;
     Cell c;
     for(int i = 0; i < n-1; i++)    {
         cellOpen = false;
+        vector<Cell> layer;
         for(int col=0; col<b; col++)
         {
             if (grid[s[i]][col]==0 && !cellOpen)
             {
-                c = Cell(col,s[i],0,s[i+1]-1);
+                c = Cell(col,s[i],0,s[i+1]-1,i);
                 cellOpen = true;
             }
-            else if((grid[s[i]][col]>=100 || col == b-1) && cellOpen)
+            else if(grid[s[i]][col]>=100 && cellOpen)
             {
                 c.x2 = col-1;
-                layers[i].push_back(c);
+                c.b = c.x2 - c.x1 + 1;
+                layer.push_back(c);
                 cellOpen = false;
             }
         }
+        if(cellOpen)
+        {
+            c.x2 = b-1;
+            c.b = c.x2 -c.x1 + 1;
+            layer.push_back(c);
+            cellOpen = false;
+        }
+        layers.push_back(layer);
     }
-    mergeCells(layers,n);
-    return layers;
+    mergeCells();
 }
 
-void Grid::mergeCells(vector<Cell>* layers,int n)
+void Grid::mergeCells()
 {
-    for(int i=0;i<n-1;i++)
+    for(int i=0;i<layers.size()-1;i++)
     {
         for(vector<Cell>::iterator j =layers[i].begin(),k=layers[i+1].begin(); j<layers[i].end() && k<layers[i+1].end(); )
         {
             if(j->x1 == k->x1 && j->x2 == k->x2)
             {
                 k->y1 = j->y1;
+                k->l = k->y2 - k->y1;
                 j = layers[i].erase(j);        
             }
             else if(j->x1 > k->x1)
@@ -121,4 +136,16 @@ void Grid::mergeCells(vector<Cell>* layers,int n)
                 j++;
         }
     }
+}
+
+bool Grid::isConnected(Cell a,Cell b)
+{
+    if(a.y2+1 == b.y1 || b.y2+1 == a.y1)
+    {
+        if((b.x1>=a.x1 && b.x1<=a.x2) || (b.x2>=a.x1 && b.x2<=a.x2))
+            return true;
+        else 
+            return false;
+    }
+    return false;
 }
