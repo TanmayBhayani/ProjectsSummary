@@ -144,6 +144,8 @@ bool Grid::isConnected(Cell a,Cell b)
     {
         if((b.x1>=a.x1 && b.x1<=a.x2) || (b.x2>=a.x1 && b.x2<=a.x2))
             return true;
+        else if((a.x1>=b.x1 && a.x1<=b.x2) || (a.x2>=b.x1 && a.x2<=b.x2))
+            return true;
         else 
             return false;
     }

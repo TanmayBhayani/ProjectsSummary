@@ -37,7 +37,6 @@ public:
     int y1,y2,x1,x2;
     int l,b;
     bool swept;
-    Cell* nextCell;
     Cell();
     Cell(int x1,int y1,int x2,int y2,int layer);
     friend bool operator== (Cell & lhs, Cell & rhs );
