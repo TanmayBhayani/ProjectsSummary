@@ -1,6 +1,9 @@
 #include <iostream>
 #include <unistd.h>
 #include "stdc++.h"
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "UtilityClasses.cpp"
 using namespace std;
 const unsigned int microsecond = 1000000;
@@ -9,8 +12,9 @@ class Grid
 private:
     void mergeCells();
 public:
+    cv::Mat map;
     vector<vector<Cell> > layers;
-    int grid[20][20]={};
+    int grid[200][200]={};
     int l,b;
     Grid();
     Grid(int l,int b);
@@ -20,10 +24,23 @@ public:
     vector<int> getHorizontalSlices();
     void createCells();
     bool isConnected(Cell a,Cell b);
+    void convertToGrid();
 };
+void Grid::convertToGrid()
+{
+    l=b=20;
+    cv::Mat temp;
+    resize(map,temp,cv::Size_<int>(l,b));//just to see the output
+    cv::imshow("Image",temp);
+    cv::waitKey();
+    for(int i = 0 ;i < l; ++i)
+        for(int j = 0; j < b; ++j)
+            grid[i][j]=temp.at<int>(i,j);
+    
+}
 Grid::Grid() {
-    l=0;
-    b=0;
+    map = cv::imread("imgs/test_img3.jpeg",0);
+    convertToGrid();
 }
 Grid::Grid(int l,int b)
 {
@@ -43,7 +60,7 @@ void Grid::display() {
     for (int i = 0; i < l; i++)
     {
         for (int j = 0; j < b; j++)
-            cout<<grid[i][j]<<"\t";
+            cout<<grid[i][j]<<" ";
         cout<<endl<<endl;
     }
     

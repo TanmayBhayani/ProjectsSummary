@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "Grid.cpp"
+
 using namespace std;
 class KantaBot
 {
@@ -316,16 +317,19 @@ void KantaBot::run()
     cout<<endl;
 }
 int main()
-{   Grid grid(10,10);
-    grid.addObstacle(5,10,0,3);
-    grid.addObstacle(5,10,6,9);
+{   
+    // Grid grid(10,10);
+    // grid.addObstacle(5,10,0,3);
+    // grid.addObstacle(5,10,6,9);
     //-----------------------
     // grid.grid[2][4]=100;
     // grid.addObstacle(3,3,3,5);
     // grid.addObstacle(4,4,2,6);
     // grid.addObstacle(5,5,1,7);
-    KantaBot bot(grid,Point(0,0));
-    bot.run();
+    // KantaBot bot(grid,Point(0,0));
+    Grid g;
+    g.display();
+    // bot.run();
     // bot.g.display();
     return 0;
 }
