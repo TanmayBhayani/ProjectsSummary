@@ -5,21 +5,25 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "clang++ - Build and debug active file",
+            "name": "g++ - Build and debug active file",
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [
-                {"name": "PKG_CONFIG_PATH", "value": "opencv Unzip directory/release/unix-install"},   // This is a unix-install in the release directory created after the opencv is decompressed. Make sure there is an opencv.pc file in that directory
-                {"name": "DYLD_LIBRARY_PATH", "value": "/usr/local/opencv/build/lib"}   // This is the directory you specified when you compiled opencv make`CMAKE_INSTALL_PREFIX`
-                // {"DYLD_LIBRARY_PATH": "/usr/local/opencv/build/lib"} //This configuration is incorrect!
-            ],
+            "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "C/C++: clang++ build active file"
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: g++ build active file",
+            "miDebuggerPath": "/usr/bin/gdb"
         }
     ]
 }

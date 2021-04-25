@@ -10,6 +10,7 @@ private:
     
 public:
     Grid g;
+    stack<Cell> back_track;
     KantaBot(Grid g,Point loc);
     // KantaBot(int x,int y);
     void setBotLocation(int x,int y);
@@ -26,6 +27,7 @@ public:
     Cell* nextCell();
     void moveToCell(Cell c,Point v);
     void markCellAsSwept(Cell c);
+    Point getClosestVertex(Cell c);
     ~KantaBot();
 };
 
@@ -100,9 +102,12 @@ void KantaBot::moveVertical(int d) {
     int dir = (d>0)? 1:-1;
     for(int i=1;i<=abs(d);i++)
     {
-        usleep(0.25*microsecond);
+        usleep(0.1*microsecond);
         loc.y+=dir;
         g.grid[loc.y][loc.x]++;
+        // cv::rectangle(g.map,cv::Point_<uchar>(loc.x*8,loc.y*8),cv::Point_<uchar>(loc.x*8+7,loc.y*8+7),cv::Scalar_<uchar>(50),cv::FILLED);
+        // cv::imshow("Map",g.map);
+        // cv::waitKey(1);
         g.display();
     }
 }
@@ -110,9 +115,12 @@ void KantaBot::moveHorizontal(int d) {
     int dir = (d>0)? 1:-1;
     for(int i=1;i<=abs(d);i++)
     {
-        usleep(0.25*microsecond);
+        usleep(0.1*microsecond);
         loc.x+=dir;
         g.grid[loc.y][loc.x]++;
+        // cv::rectangle(g.map,cv::Point_<uchar>(loc.x*8,loc.y*8),cv::Point_<uchar>(loc.x*8+7,loc.y*8+7),cv::Scalar_<uchar>(50),cv::FILLED);
+        // cv::imshow("Map",g.map);
+        // cv::waitKey(1);
         g.display();
     }
 }
@@ -237,19 +245,46 @@ Cell& KantaBot::getCurrentCell()//returns Copy!!!!!
     }
 }
 
-Cell* KantaBot::nextCell()//Replace parameter cell with bot location
+// Cell* KantaBot::nextCell()//Replace parameter cell with bot location
+// {
+//     Cell curr_cell = getCurrentCell();
+//     for(vector<vector<Cell> >::iterator l = g.layers.begin(); l<g.layers.end(); l++)
+//     {
+//         for(vector<Cell>::iterator c = l->begin();c<l->end();c++)
+//         {
+//                 if(g.isConnected(curr_cell,*c) && c->swept==false && !(*c==curr_cell))
+//                 {
+//                     return &*c;
+//                 }
+//         }
+//     }
+//     return nullptr;
+// }
+
+Cell* KantaBot::nextCell()
 {
     Cell curr_cell = getCurrentCell();
-    for(vector<vector<Cell> >::iterator l = g.layers.begin(); l<g.layers.end(); l++)
+    if(curr_cell.layer!=0)
     {
-        for(vector<Cell>::iterator c = l->begin();c<l->end();c++)
+        for (vector<Cell>::iterator c = g.layers[curr_cell.layer-1].begin(); c < g.layers[curr_cell.layer-1].end(); c++)
         {
-                if(g.isConnected(curr_cell,*c) && c->swept==false && !(*c==curr_cell))
-                {
-                    return &*c;
-                }
+            if(g.isConnected(curr_cell,*c) && c->swept==false && !(*c==curr_cell))
+            {
+                return &*c;
+            }
         }
     }
+    if(curr_cell.layer!=g.layers.size()-1)
+    {
+        for (vector<Cell>::iterator c = g.layers[curr_cell.layer+1].begin(); c < g.layers[curr_cell.layer+1].end(); c++)
+        {
+            if(g.isConnected(curr_cell,*c) && c->swept==false && !(*c==curr_cell))
+            {
+                return &*c;
+            }
+        }
+    }
+    
     return nullptr;
 }
 
@@ -281,11 +316,33 @@ void KantaBot::moveToCell(Cell c,Point v)
 {
     Cell curr_cell = getCurrentCell();
     int dir;
-    if(g.isConnected(c,curr_cell) && v.x>=curr_cell.x1 && v.x<=curr_cell.x2)
+    if(g.isConnected(c,curr_cell))
     {
-        moveHorizontal(v.x-loc.x);
-        moveVertical(v.y-loc.y);
+        if(loc.x >= c.x1 && loc.x <= c.x2)
+        {
+            moveVertical(v.y-loc.y);
+            moveHorizontal(v.x-loc.x);
+        }
+        else
+        {
+            moveHorizontal(v.x-loc.x);
+            moveVertical(v.y-loc.y);
+        }
     }
+}
+Point KantaBot::getClosestVertex(Cell c)
+{
+    float d=99999;
+    Point t;
+    for (Point p:c.getVertices())
+    {
+        if(loc.pointDistance(p)<d)
+        {
+            t = p;
+            d = loc.pointDistance(p);
+        }
+    }
+    return t;
 }
 void KantaBot::markCellAsSwept(Cell c)
 {
@@ -306,12 +363,34 @@ void KantaBot::run()
     // Cell c = getCurrentCell();
     // cout<<c.b;
     Cell *nxt_cell;
-    while (nxt_cell = nextCell())
+    while (!g.isGridSwept())
     {
-        pair<char,Point> n = getSweepDirection(sweepEndVertex(),nxt_cell->getVertices());
+        if(nxt_cell = nextCell())
+        {
+            if(getCurrentCell().swept==false)
+            {
+                pair<char,Point> n = getSweepDirection(sweepEndVertex(),nxt_cell->getVertices());
+                sweepGrid(n.first);
+                back_track.push(getCurrentCell());
+                moveToCell(*nxt_cell,n.second);
+            }
+            else
+            {
+                moveToCell(*nxt_cell,getClosestVertex(*nxt_cell));
+            }
+        }
+        else
+        {
+            pair<char,Point> n = getSweepDirection(sweepEndVertex(),back_track.top().getVertices());
+            sweepGrid(n.first);
+            moveToCell(back_track.top(),getClosestVertex(back_track.top()));
+        }
+        // else{
+        //     back_track.pop();
+        //     moveToCell(back_track.top(),getClosestVertex(back_track.top()));
+        // }
         // cout<<n.second.y;
-        sweepGrid(n.first);
-        moveToCell(*nxt_cell,n.second);
+        
     }
     sweepGrid('H');
     cout<<endl;
@@ -326,10 +405,9 @@ int main()
     // grid.addObstacle(3,3,3,5);
     // grid.addObstacle(4,4,2,6);
     // grid.addObstacle(5,5,1,7);
-    // KantaBot bot(grid,Point(0,0));
     Grid g;
-    g.display();
-    // bot.run();
+    KantaBot bot(g,Point(0,0));
+    bot.run();
     // bot.g.display();
     return 0;
 }

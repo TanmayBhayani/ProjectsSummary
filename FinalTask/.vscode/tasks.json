@@ -2,17 +2,18 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: clang++ build active file",
-            "command": "/usr/bin/clang++",
+            "label": "C/C++: g++ build active file",
+            "command": "/usr/bin/g++",
             "args": [
                 "-g",
-                "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}",
-                "pkg-config",
-                "--libs",
+                "${fileBasenameNoExtension}",
+                "${file}",
+                "`pkg-config",
+                "opencv",
                 "--cflags",
-                "opencv"
+                "--libs`",
+                
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

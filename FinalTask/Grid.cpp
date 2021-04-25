@@ -25,21 +25,42 @@ public:
     void createCells();
     bool isConnected(Cell a,Cell b);
     void convertToGrid();
+    bool isGridSwept();
 };
 void Grid::convertToGrid()
 {
-    l=b=20;
+    l=b=25;
     cv::Mat temp;
     resize(map,temp,cv::Size_<int>(l,b));//just to see the output
-    cv::imshow("Image",temp);
-    cv::waitKey();
+    cv::bitwise_not(temp,temp);
+    // cv::imshow("Image",temp);
+    // cv::waitKey();
     for(int i = 0 ;i < l; ++i)
         for(int j = 0; j < b; ++j)
-            grid[i][j]=temp.at<int>(i,j);
+        {
+            if(temp.at<uchar>(i,j)<100)
+                grid[i][j]=0;
+            else
+                grid[i][j]=temp.at<uchar>(i,j);
+        }
     
 }
+bool Grid::isGridSwept()
+{
+    for(vector<vector<Cell> >::iterator l = layers.begin(); l<layers.end(); l++)
+    {
+        for(vector<Cell>::iterator c = l->begin();c<l->end();c++)
+        {
+                if(c->swept==false)
+                {
+                    return false;
+                }
+        }
+    }
+    return true;
+}
 Grid::Grid() {
-    map = cv::imread("imgs/test_img3.jpeg",0);
+    map = cv::imread("imgs/test_img5.jpeg",0);
     convertToGrid();
 }
 Grid::Grid(int l,int b)
@@ -60,7 +81,7 @@ void Grid::display() {
     for (int i = 0; i < l; i++)
     {
         for (int j = 0; j < b; j++)
-            cout<<grid[i][j]<<" ";
+            cout<<grid[i][j]<<" \t";
         cout<<endl<<endl;
     }
     
@@ -132,7 +153,7 @@ void Grid::createCells() {
         }
         layers.push_back(layer);
     }
-    mergeCells();
+    // mergeCells();
 }
 
 void Grid::mergeCells()

@@ -4,8 +4,7 @@
             "name": "Mac",
             "includePath": [
                 "/usr/local/include",
-                //"/Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include",
-                "/usr/local/Cellar/opencv/4.5.2/include",        // This is the directory you specified when you compiled opencv make`CMAKE_INSTALL_PREFIX`
+                // "/usr/include/opencv2", 
                 "${workspaceFolder}"
             ],
             "browse": {
@@ -13,16 +12,11 @@
                 "databaseFilename": "",
                 "path": [
                     "/usr/local/include",
-                    //"/Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include",
-                    "/usr/local/Cellar/opencv/4.5.2/include",     // This is the directory you specified when you compiled opencv make`CMAKE_INSTALL_PREFIX`
+                    // "/usr/include/opencv2",
                     "${workspaceFolder}"
                 ]
             },
             "intelliSenseMode": "clang-x64",
-            "macFrameworkPath": [
-                "/System/Library/Frameworks",
-                "/Library/Frameworks"
-            ],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
             "cppStandard": "c++17"
