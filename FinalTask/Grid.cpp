@@ -15,7 +15,7 @@ public:
     cv::Mat map;
     vector<vector<Cell> > layers;
     int grid[200][200]={};
-    int l,b;
+    int l,b,scale;
     Grid();
     Grid(int l,int b);
     ~Grid();
@@ -29,9 +29,11 @@ public:
 };
 void Grid::convertToGrid()
 {
-    l=b=25;
+    l=b=50;
+    scale = 500/l;
     cv::Mat temp;
-    resize(map,temp,cv::Size_<int>(l,b));//just to see the output
+    resize(map,temp,cv::Size_<int>(l,b));
+    resize(map,map,cv::Size_<int>(500,500));
     cv::bitwise_not(temp,temp);
     // cv::imshow("Image",temp);
     // cv::waitKey();
@@ -60,7 +62,7 @@ bool Grid::isGridSwept()
     return true;
 }
 Grid::Grid() {
-    map = cv::imread("imgs/test_img1.jpeg",0);
+    map = cv::imread("imgs/test_img2.jpeg",0);
     convertToGrid();
 }
 Grid::Grid(int l,int b)

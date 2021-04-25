@@ -102,26 +102,32 @@ void KantaBot::moveVertical(int d) {
     int dir = (d>0)? 1:-1;
     for(int i=1;i<=abs(d);i++)
     {
-        usleep(0.1*microsecond);
         loc.y+=dir;
         g.grid[loc.y][loc.x]++;
-        // cv::rectangle(g.map,cv::Point_<uchar>(loc.x*8,loc.y*8),cv::Point_<uchar>(loc.x*8+7,loc.y*8+7),cv::Scalar_<uchar>(50),cv::FILLED);
-        // cv::imshow("Map",g.map);
-        // cv::waitKey(1);
-        g.display();
+        cv::rectangle(g.map,cv::Point_<int>(loc.x*g.scale,loc.y*g.scale),cv::Point_<int>((loc.x*g.scale)+g.scale-1,(loc.y*g.scale)+g.scale-1),cv::Scalar_<uchar>(60),cv::FILLED);
+        cv::Mat temp;
+        g.map.copyTo(temp);
+        cv::circle(temp,cv::Point_<int>(loc.x*g.scale+g.scale/2,loc.y*g.scale+g.scale/2),g.scale/2,cv::Scalar_<uchar>(20),cv::FILLED);
+        // g.display();
+        cv::imshow("Map",temp);
+        cv::waitKey(1);
+        usleep(0.01*microsecond);
     }
 }
 void KantaBot::moveHorizontal(int d) {
     int dir = (d>0)? 1:-1;
     for(int i=1;i<=abs(d);i++)
     {
-        usleep(0.1*microsecond);
         loc.x+=dir;
         g.grid[loc.y][loc.x]++;
-        // cv::rectangle(g.map,cv::Point_<uchar>(loc.x*8,loc.y*8),cv::Point_<uchar>(loc.x*8+7,loc.y*8+7),cv::Scalar_<uchar>(50),cv::FILLED);
-        // cv::imshow("Map",g.map);
-        // cv::waitKey(1);
-        g.display();
+        cv::rectangle(g.map,cv::Point_<int>(loc.x*g.scale,loc.y*g.scale),cv::Point_<int>((loc.x*g.scale)+g.scale-1,(loc.y*g.scale)+g.scale-1),cv::Scalar_<uchar>(60),cv::FILLED);
+        cv::Mat temp;
+        g.map.copyTo(temp);
+        cv::circle(temp,cv::Point_<int>(loc.x*g.scale+g.scale/2,loc.y*g.scale+g.scale/2),g.scale/2,cv::Scalar_<uchar>(20),cv::FILLED);
+        // g.display();
+        cv::imshow("Map",temp);
+        cv::waitKey(1);
+        usleep(0.01*microsecond);
     }
 }
 KantaBot::~KantaBot()
@@ -390,11 +396,6 @@ void KantaBot::run()
             sweepGrid(n.first);
             moveToCell(back_track.top(),getClosestVertex(back_track.top()));
         }
-        // else{
-        //     back_track.pop();
-        //     moveToCell(back_track.top(),getClosestVertex(back_track.top()));
-        // }
-        // cout<<n.second.y;
         
     }
     sweepGrid('H');
