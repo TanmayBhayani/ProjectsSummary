@@ -80,7 +80,7 @@ void KantaBot::sweepGrid(char d) {
     if(d=='H')
     {
         // cout<<loc.y<<" "<<loc.x<<endl;
-        for (; (v>=3 && loc.y>c.y1) || (v<=2 && loc.y <c.y2); moveVertical(dir_row))
+        for (; (v>=2 && loc.y>c.y1) || (v<=1 && loc.y <c.y2); moveVertical(dir_row))
         {
             moveHorizontal(dir_col*(c.b-1));
             dir_col*=-1;
@@ -378,6 +378,11 @@ void KantaBot::run()
             {
                 moveToCell(*nxt_cell,getClosestVertex(*nxt_cell));
             }
+        }
+        else if(getCurrentCell().swept==true)
+        {
+            back_track.pop();
+            moveToCell(back_track.top(),getClosestVertex(back_track.top()));
         }
         else
         {

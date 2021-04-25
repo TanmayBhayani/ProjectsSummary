@@ -60,7 +60,7 @@ bool Grid::isGridSwept()
     return true;
 }
 Grid::Grid() {
-    map = cv::imread("imgs/test_img5.jpeg",0);
+    map = cv::imread("imgs/test_img1.jpeg",0);
     convertToGrid();
 }
 Grid::Grid(int l,int b)
