@@ -12,6 +12,7 @@ class Grid
 private:
     void mergeCells();
 public:
+    int num_of_unoccupied_cells;
     cv::Mat map;
     vector<vector<Cell> > layers;
     int grid[200][200]={};
@@ -41,7 +42,10 @@ void Grid::convertToGrid()
         for(int j = 0; j < b; ++j)
         {
             if(temp.at<uchar>(i,j)<100)
+            {
                 grid[i][j]=0;
+                num_of_unoccupied_cells++;
+            }
             else
                 grid[i][j]=temp.at<uchar>(i,j);
         }
@@ -62,7 +66,8 @@ bool Grid::isGridSwept()
     return true;
 }
 Grid::Grid() {
-    map = cv::imread("imgs/test_img2.jpeg",0);
+    map = cv::imread("imgs/test_img6.jpeg",0);
+    num_of_unoccupied_cells = 0;
     convertToGrid();
 }
 Grid::Grid(int l,int b)

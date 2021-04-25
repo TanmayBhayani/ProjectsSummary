@@ -1,7 +1,6 @@
 #include <iostream>
 #include <unistd.h>
 #include "Grid.cpp"
-
 using namespace std;
 class KantaBot
 {
@@ -10,6 +9,7 @@ private:
     
 public:
     Grid g;
+    int steps_taken;
     stack<Cell> back_track;
     KantaBot(Grid g,Point loc);
     // KantaBot(int x,int y);
@@ -35,6 +35,7 @@ KantaBot::KantaBot(Grid g,Point loc)
 {
     this->g = g;
     this->loc = loc;
+    steps_taken=0;
     // this->g.grid[loc.y][loc.x] = 1;
 }
 void KantaBot::setBotLocation(int x,int y)
@@ -102,13 +103,13 @@ void KantaBot::moveVertical(int d) {
     int dir = (d>0)? 1:-1;
     for(int i=1;i<=abs(d);i++)
     {
+        steps_taken++;
         loc.y+=dir;
         g.grid[loc.y][loc.x]++;
         cv::rectangle(g.map,cv::Point_<int>(loc.x*g.scale,loc.y*g.scale),cv::Point_<int>((loc.x*g.scale)+g.scale-1,(loc.y*g.scale)+g.scale-1),cv::Scalar_<uchar>(60),cv::FILLED);
         cv::Mat temp;
         g.map.copyTo(temp);
         cv::circle(temp,cv::Point_<int>(loc.x*g.scale+g.scale/2,loc.y*g.scale+g.scale/2),g.scale/2,cv::Scalar_<uchar>(20),cv::FILLED);
-        // g.display();
         cv::imshow("Map",temp);
         cv::waitKey(1);
         usleep(0.01*microsecond);
@@ -118,6 +119,7 @@ void KantaBot::moveHorizontal(int d) {
     int dir = (d>0)? 1:-1;
     for(int i=1;i<=abs(d);i++)
     {
+        steps_taken++;
         loc.x+=dir;
         g.grid[loc.y][loc.x]++;
         cv::rectangle(g.map,cv::Point_<int>(loc.x*g.scale,loc.y*g.scale),cv::Point_<int>((loc.x*g.scale)+g.scale-1,(loc.y*g.scale)+g.scale-1),cv::Scalar_<uchar>(60),cv::FILLED);
@@ -251,21 +253,6 @@ Cell& KantaBot::getCurrentCell()//returns Copy!!!!!
     }
 }
 
-// Cell* KantaBot::nextCell()//Replace parameter cell with bot location
-// {
-//     Cell curr_cell = getCurrentCell();
-//     for(vector<vector<Cell> >::iterator l = g.layers.begin(); l<g.layers.end(); l++)
-//     {
-//         for(vector<Cell>::iterator c = l->begin();c<l->end();c++)
-//         {
-//                 if(g.isConnected(curr_cell,*c) && c->swept==false && !(*c==curr_cell))
-//                 {
-//                     return &*c;
-//                 }
-//         }
-//     }
-//     return nullptr;
-// }
 
 Cell* KantaBot::nextCell()
 {
@@ -365,9 +352,6 @@ void KantaBot::markCellAsSwept(Cell c)
 void KantaBot::run()
 {   g.createCells();
     setBotLocation(0,0);
-
-    // Cell c = getCurrentCell();
-    // cout<<c.b;
     Cell *nxt_cell;
     while (!g.isGridSwept())
     {
@@ -396,10 +380,8 @@ void KantaBot::run()
             sweepGrid(n.first);
             moveToCell(back_track.top(),getClosestVertex(back_track.top()));
         }
-        
     }
-    sweepGrid('H');
-    cout<<endl;
+    cout<<((steps_taken-g.num_of_unoccupied_cells)/(float)g.num_of_unoccupied_cells);
 }
 int main()
 {   
